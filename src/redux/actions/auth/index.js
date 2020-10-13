@@ -17,9 +17,10 @@ export const registrationUser = (user) => {
         });
       })
       .catch((err) => {
-        if (err.response) {
-          alert(err.response.data.error);
-        }
+        dispatch({
+          type: "OPEN_ALERT",
+          payload: err.response.data.error,
+        });
       });
   };
 };
@@ -37,9 +38,10 @@ export const loginUser = (user) => {
         });
       })
       .catch((err) => {
-        if (err.response) {
-          alert(err.response.data.error);
-        }
+        dispatch({
+          type: "OPEN_ALERT",
+          payload: err.response.data.error,
+        });
       });
   };
 };
@@ -73,7 +75,14 @@ export const logOutUser = (user) => {
           type: "LOGIN_WITH_EMAIL",
           payload: {},
         });
-        alert(response.data.message);
       });
+  };
+};
+
+export const closeAlert = () => {
+  return (dispatch) => {
+    dispatch({
+      type: "CLOSE_ALERT",
+    });
   };
 };

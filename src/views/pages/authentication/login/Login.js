@@ -9,15 +9,27 @@ import {
   FormGroup,
   Input,
   Label,
+  Modal,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
 } from "reactstrap";
-import { Mail, Lock, Check, Facebook, Twitter, GitHub } from "react-feather";
+import {
+  Mail,
+  Check,
+  Facebook,
+  Twitter,
+  GitHub,
+  Eye,
+  EyeOff,
+} from "react-feather";
 import { history } from "../../../../history";
 import Checkbox from "../../../../components/@vuexy/checkbox/CheckboxesVuexy";
 import googleSvg from "../../../../assets/img/svg/google.svg";
 import { connect } from "react-redux";
 import loginImg from "../../../../assets/img/pages/login.png";
 import "../../../../assets/scss/pages/authentication.scss";
-import { loginUser } from "../../../../redux/actions/auth";
+import { loginUser, closeAlert } from "../../../../redux/actions/auth";
 import { Redirect } from "react-router-dom";
 
 class Login extends React.Component {
@@ -30,6 +42,8 @@ class Login extends React.Component {
       activeTab: "1",
       email: "",
       password: "",
+      rememberMe: false,
+      passwordVisible: false,
     };
   }
 
@@ -47,15 +61,52 @@ class Login extends React.Component {
     const user = {
       email: this.state.email,
       password: this.state.password,
+      rememberMe: this.state.rememberMe,
     };
 
     this.props.loginUser(user);
+  };
+
+  changePassword = (e) => {
+    e.persist();
+    this.setState((prevState) => ({
+      ...prevState,
+      ...{ password: e.target.value },
+    }));
+  };
+
+  changePasswordVisible = (e) => {
+    e.persist();
+    this.setState((prevState) => ({
+      ...prevState,
+      ...{ passwordVisible: !prevState.passwordVisible },
+    }));
   };
 
   render() {
     return (
       <>
         {this.props.user.token && <Redirect to="/" />}
+        <Modal
+          isOpen={this.props.user.alert.status}
+          toggle={() => this.props.closeAlert()}
+          className="modal-dialog-centered"
+        >
+          <ModalHeader
+            toggle={() => this.props.closeAlert()}
+            className="bg-danger"
+          >
+            Error
+          </ModalHeader>
+          <ModalBody className="modal-dialog-centered">
+            {this.props.user.alert.text}
+          </ModalBody>
+          <ModalFooter>
+            <Button color="primary" onClick={() => this.props.closeAlert()}>
+              Ok
+            </Button>
+          </ModalFooter>
+        </Modal>
         <Row className="m-0 justify-content-center">
           <Col
             sm="8"
@@ -95,16 +146,26 @@ class Login extends React.Component {
                         </FormGroup>
                         <FormGroup className="form-label-group position-relative has-icon-left">
                           <Input
-                            type="password"
-                            required
+                            type={
+                              !this.state.passwordVisible ? "password" : "text"
+                            }
                             placeholder="Password"
                             value={this.state.password}
-                            onChange={(e) =>
-                              this.setState({ password: e.target.value })
-                            }
+                            onChange={this.changePassword}
+                            required
                           />
                           <div className="form-control-position">
-                            <Lock size={15} />
+                            {!this.state.passwordVisible ? (
+                              <Eye
+                                onClick={this.changePasswordVisible}
+                                size={15}
+                              />
+                            ) : (
+                              <EyeOff
+                                onClick={this.changePasswordVisible}
+                                size={15}
+                              />
+                            )}
                           </div>
                           <Label>Password</Label>
                         </FormGroup>
@@ -165,6 +226,9 @@ class Login extends React.Component {
   }
 }
 
-const props = connect((state) => ({ user: state.auth.user }), { loginUser });
+const props = connect((state) => ({ user: state.auth.user }), {
+  loginUser,
+  closeAlert,
+});
 
 export default props(Login);

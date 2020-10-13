@@ -10,22 +10,28 @@ import {
   FormGroup,
   Input,
   Label,
+  Modal,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
 } from "reactstrap";
 import {
   Mail,
-  Lock,
   Check,
   Facebook,
   Twitter,
   GitHub,
   User,
+  List,
+  Eye,
+  EyeOff,
 } from "react-feather";
 import { history } from "../../../../history";
 import Checkbox from "../../../../components/@vuexy/checkbox/CheckboxesVuexy";
 import googleSvg from "../../../../assets/img/svg/google.svg";
 import loginImg from "../../../../assets/img/pages/login.png";
 import "../../../../assets/scss/pages/authentication.scss";
-import { registrationUser } from "../../../../redux/actions/auth";
+import { registrationUser, closeAlert } from "../../../../redux/actions/auth";
 import { Redirect } from "react-router-dom";
 
 class Registration extends React.Component {
@@ -38,8 +44,12 @@ class Registration extends React.Component {
       activeTab: "1",
       email: "",
       name: "",
-      checked: false,
+      rememberMe: false,
+      policy: false,
+      role: "student",
       password: "",
+      passwordVisible: false,
+      modal: false,
     };
   }
 
@@ -49,6 +59,13 @@ class Registration extends React.Component {
         activeTab: tab,
       });
     }
+  };
+
+  toggleModal = () => {
+    this.setState((prevState) => ({
+      ...prevState,
+      ...{ modal: !prevState.modal },
+    }));
   };
 
   changeEmail = (e) => {
@@ -79,7 +96,7 @@ class Registration extends React.Component {
     e.persist();
     this.setState((prevState) => ({
       ...prevState,
-      ...{ checked: e.target.checked },
+      ...{ rememberMe: e.target.checked },
     }));
   };
 
@@ -90,15 +107,99 @@ class Registration extends React.Component {
       name: this.state.name,
       email: this.state.email,
       password: this.state.password,
+      rememberMe: this.state.rememberMe,
     };
 
     this.props.registrationUser(user);
+  };
+
+  changeRole = (e) => {
+    e.persist();
+    this.setState((prevState) => ({
+      ...prevState,
+      ...{ role: e.target.value },
+    }));
+  };
+
+  changePolicy = (e) => {
+    e.persist();
+    this.setState((prevState) => ({
+      ...prevState,
+      ...{ policy: false },
+    }));
+    this.toggleModal();
+  };
+
+  changePasswordVisible = (e) => {
+    e.persist();
+    this.setState((prevState) => ({
+      ...prevState,
+      ...{ passwordVisible: !prevState.passwordVisible },
+    }));
   };
 
   render() {
     return (
       <>
         {this.props.user.token && <Redirect to="/" />}
+        <Modal
+          isOpen={this.props.user.alert.status}
+          toggle={() => this.props.closeAlert()}
+          className="modal-dialog-centered"
+        >
+          <ModalHeader
+            toggle={() => this.props.closeAlert()}
+            className="bg-danger"
+          >
+            Error
+          </ModalHeader>
+          <ModalBody className="modal-dialog-centered">
+            {this.props.user.alert.text}
+          </ModalBody>
+          <ModalFooter>
+            <Button color="primary" onClick={() => this.props.closeAlert()}>
+              Ok
+            </Button>
+          </ModalFooter>
+        </Modal>
+        <Modal
+          isOpen={this.state.modal}
+          toggle={this.toggleModal}
+          className="modal-dialog-centered"
+        >
+          <ModalHeader toggle={this.toggleModal} className="bg-info">
+            Terms of Use and Privacy Policy
+          </ModalHeader>
+          <ModalBody className="modal-dialog-centered">
+            Privacy Policy...
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              color="danger"
+              onClick={() => {
+                this.setState((prevState) => ({
+                  ...prevState,
+                  ...{ policy: false },
+                }));
+                this.toggleModal();
+              }}
+            >
+              Disagree
+            </Button>
+            <Button
+              color="success"
+              onClick={() => {
+                this.setState((prevState) => ({
+                  ...prevState,
+                  ...{ policy: true },
+                }));
+                this.toggleModal();
+              }}
+            >
+              Agree
+            </Button>
+          </ModalFooter>
+        </Modal>
         <Row className="m-0 justify-content-center">
           <Col
             sm="8"
@@ -120,6 +221,19 @@ class Registration extends React.Component {
                     <CardBody>
                       <h4>Registration</h4>
                       <p>Please, register your account.</p>
+                      <FormGroup className="form-label-group position-relative has-icon-left">
+                        <Input
+                          type="text"
+                          placeholder="Name"
+                          value={this.state.name}
+                          onChange={this.changeName}
+                          required
+                        />
+                        <div className="form-control-position">
+                          <User size={15} />
+                        </div>
+                        <Label>Name</Label>
+                      </FormGroup>
                       <Form onSubmit={this.registrationUser}>
                         <FormGroup className="form-label-group position-relative has-icon-left">
                           <Input
@@ -136,33 +250,59 @@ class Registration extends React.Component {
                         </FormGroup>
                         <FormGroup className="form-label-group position-relative has-icon-left">
                           <Input
-                            type="text"
-                            placeholder="Name"
-                            value={this.state.name}
-                            onChange={this.changeName}
-                            required
-                          />
+                            type="select"
+                            value={this.state.role}
+                            onChange={this.changeRole}
+                          >
+                            <option value="student">Student</option>
+                            <option value="teacher">Teacher</option>
+                            <option value="involved parent">
+                              Involved parent
+                            </option>
+                            <option value="parent">Parent</option>
+                          </Input>
                           <div className="form-control-position">
-                            <User size={15} />
+                            <List size={15} />
                           </div>
-                          <Label>Name</Label>
+                          <Label>Role</Label>
                         </FormGroup>
                         <FormGroup className="form-label-group position-relative has-icon-left">
                           <Input
-                            type="password"
+                            type={
+                              !this.state.passwordVisible ? "password" : "text"
+                            }
                             placeholder="Password"
                             value={this.state.password}
                             onChange={this.changePassword}
                             required
                           />
                           <div className="form-control-position">
-                            <Lock size={15} />
+                            {!this.state.passwordVisible ? (
+                              <Eye
+                                onClick={this.changePasswordVisible}
+                                size={15}
+                              />
+                            ) : (
+                              <EyeOff
+                                onClick={this.changePasswordVisible}
+                                size={15}
+                              />
+                            )}
                           </div>
                           <Label>Password</Label>
                         </FormGroup>
                         <FormGroup className="d-flex justify-content-between align-items-center">
                           <Checkbox
-                            checked={this.state.checked}
+                            checked={this.state.policy}
+                            onChange={this.changePolicy}
+                            color="success"
+                            icon={<Check className="vx-icon" size={16} />}
+                            label="I agree to Terms of Use and Privacy Policy"
+                          />
+                        </FormGroup>
+                        <FormGroup className="d-flex justify-content-between align-items-center">
+                          <Checkbox
+                            checked={this.state.rememberMe}
                             onChange={this.changeCheckbox}
                             color="primary"
                             icon={<Check className="vx-icon" size={16} />}
@@ -177,7 +317,11 @@ class Registration extends React.Component {
                           >
                             Login
                           </Button.Ripple>
-                          <Button.Ripple color="primary" type="submit">
+                          <Button.Ripple
+                            color="primary"
+                            type="submit"
+                            disabled={!this.state.policy ? true : false}
+                          >
                             Register
                           </Button.Ripple>
                         </div>
@@ -220,6 +364,7 @@ class Registration extends React.Component {
 
 const props = connect((state) => ({ user: state.auth.user }), {
   registrationUser,
+  closeAlert,
 });
 
 export default props(Registration);
